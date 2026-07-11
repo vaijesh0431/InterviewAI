@@ -13,3 +13,9 @@ APP_NAME = "InterviewAI"
 VERSION = "1.0.0"
 
 AUTHOR = "Vaijesh Sindpure"
+
+OLLAMA_MODEL = "llama3.1:8b"
+
+RECORD_DURATION = 8
+
+WHISPER_MODEL = "base"
