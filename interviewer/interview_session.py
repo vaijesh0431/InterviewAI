@@ -1,14 +1,22 @@
+from email.mime import audio
+from multiprocessing import context
+
 from rich.console import Console
 from rich.panel import Panel
 
+from interviewer import followup
 from speech.recorder import record_audio
 from speech.speech_to_text import transcribe
 from speech.text_to_speech import speak
 
 from interviewer.question_loader import QuestionLoader
+from interviewer.memory import InterviewMemory
+from interviewer.followup import generate_followup
 
 from evaluation.evaluator import evaluate
 from evaluation.scoring import overall_score
+
+from config import MAX_FOLLOWUPS
 
 console = Console()
 
@@ -24,6 +32,9 @@ class InterviewSession:
 
         # Stores complete interview results
         self.results = []
+
+        # Interview memory
+        self.memory = InterviewMemory()
 
     def start(self):
 
@@ -41,9 +52,9 @@ class InterviewSession:
 
         for index, question in enumerate(self.questions, start=1):
 
-            # ----------------------------
+            # ---------------------------------
             # Display Question
-            # ----------------------------
+            # ---------------------------------
 
             console.print()
 
@@ -55,12 +66,11 @@ class InterviewSession:
                 )
             )
 
-            # AI speaks the question
             speak(question["question"])
 
-            # ----------------------------
-            # Record Candidate Response
-            # ----------------------------
+            # ---------------------------------
+            # Candidate Answer
+            # ---------------------------------
 
             audio = record_audio()
 
@@ -79,7 +89,6 @@ class InterviewSession:
                 )
             )
 
-            # Store raw answer
             self.answers.append(
                 {
                     "question": question["question"],
@@ -87,9 +96,15 @@ class InterviewSession:
                 }
             )
 
-            # ----------------------------
-            # AI Evaluation
-            # ----------------------------
+            # Store in interview memory
+            self.memory.add(
+                question["question"],
+                answer,
+            )
+
+            # ---------------------------------
+            # Evaluate Main Answer
+            # ---------------------------------
 
             evaluation = evaluate(
                 question["question"],
@@ -100,47 +115,29 @@ class InterviewSession:
 
             evaluation["overall_score"] = score
 
-            # Store complete result
-            self.results.append(
-                {
-                    "question": question["question"],
-                    "answer": answer,
-                    "evaluation": evaluation,
-                }
-            )
-
-            # ----------------------------
-            # Display AI Evaluation
-            # ----------------------------
-
             console.print()
 
             console.print(
                 Panel(
                     f"""
-📘 Technical Score     : {evaluation.get('technical_score', 0)}/10
+📘 Technical Score     : {evaluation.get('technical_score',0)}/10
 
-💬 Communication Score : {evaluation.get('communication_score', 0)}/10
+💬 Communication Score : {evaluation.get('communication_score',0)}/10
 
-🎯 Confidence Score    : {evaluation.get('confidence_score', 0)}/10
+🎯 Confidence Score    : {evaluation.get('confidence_score',0)}/10
 
 ⭐ Overall Score       : {score}/10
 
-✅ Accuracy            : {evaluation.get('accuracy', 'Unknown')}
+✅ Accuracy            : {evaluation.get('accuracy','Unknown')}
 """,
                     title="📊 AI Evaluation",
                     border_style="green",
                 )
             )
 
-            # ----------------------------
-            # Display Strengths
-            # ----------------------------
-
             strengths = evaluation.get("strengths", [])
 
             if strengths:
-
                 console.print(
                     Panel(
                         "\n".join(f"✔ {item}" for item in strengths),
@@ -149,14 +146,9 @@ class InterviewSession:
                     )
                 )
 
-            # ----------------------------
-            # Display Weaknesses
-            # ----------------------------
-
             weaknesses = evaluation.get("weaknesses", [])
 
             if weaknesses:
-
                 console.print(
                     Panel(
                         "\n".join(f"• {item}" for item in weaknesses),
@@ -165,14 +157,9 @@ class InterviewSession:
                     )
                 )
 
-            # ----------------------------
-            # Missing Concepts
-            # ----------------------------
-
             missing = evaluation.get("missing_concepts", [])
 
             if missing:
-
                 console.print(
                     Panel(
                         "\n".join(f"• {item}" for item in missing),
@@ -180,10 +167,6 @@ class InterviewSession:
                         border_style="yellow",
                     )
                 )
-
-            # ----------------------------
-            # AI Feedback
-            # ----------------------------
 
             console.print(
                 Panel(
@@ -196,9 +179,125 @@ class InterviewSession:
                 )
             )
 
-        # ----------------------------
+
+
+            # ---------------------------------
+            # Adaptive Follow-up Questions
+            # ---------------------------------
+
+            current_question = question["question"]
+            current_answer = answer
+            current_evaluation = evaluation
+
+            for i in range(MAX_FOLLOWUPS):
+
+                context = self.memory.get_context()
+
+                followup = generate_followup(
+                    current_question,
+                    current_answer,
+                    current_evaluation,
+                    context,
+                )
+
+                console.print()
+
+                console.print(
+                    Panel(
+                        followup,
+                        title=f"🔄 Follow-up Question {i + 1}/{MAX_FOLLOWUPS}",
+                        border_style="blue",
+                    )
+                )
+
+                speak(followup)
+
+                audio = record_audio()
+
+                followup_answer = transcribe(audio)
+
+                if not followup_answer or followup_answer.strip() == "":
+                    followup_answer = "No response detected."
+
+                console.print()
+
+                console.print(
+                    Panel(
+                        followup_answer,
+                        title=f"🧑 Follow-up Answer {i + 1}",
+                        border_style="green",
+                    )
+                )
+
+                followup_result = evaluate(
+                    followup,
+                    followup_answer,
+                )
+
+                followup_score = overall_score(followup_result)
+
+                followup_result["overall_score"] = followup_score
+
+                console.print()
+
+                console.print(
+                    Panel(
+                        f"""
+                        📘 Technical Score     : {followup_result.get('technical_score',0)}/10
+
+                        💬 Communication Score : {followup_result.get('communication_score',0)}/10
+
+                        🎯 Confidence Score    : {followup_result.get('confidence_score',0)}/10
+
+                        ⭐ Overall Score       : {followup_score}/10
+
+                        ✅ Accuracy            : {followup_result.get('accuracy','Unknown')}
+                    """,
+                        title=f"📊 Follow-up Evaluation {i + 1}",
+                        border_style="green",
+                    )
+                )
+
+                console.print(
+                    Panel(
+                        followup_result.get(
+                            "feedback",
+                            "No feedback available.",
+                        ),
+                        title="💡 Follow-up Feedback",
+                        border_style="magenta",
+                    )
+                )
+
+                # Store follow-up in interview memory
+                self.memory.add(
+                    followup,
+                    followup_answer
+                )
+
+                # Store interview result
+                self.results.append(
+                    {
+                        "question": current_question,
+                        "answer": current_answer,
+                        "evaluation": current_evaluation,
+                        "main_score": current_evaluation.get("overall_score", score),
+
+                        "followup": followup,
+                        "followup_answer": followup_answer,
+                        "followup_score": followup_score,
+                        "followup_evaluation": followup_result,
+                    }
+                )
+
+                # Update context for the next follow-up
+                current_question = followup
+                current_answer = followup_answer
+                current_evaluation = followup_result
+
+        # ---------------------------------
         # Interview Completed
-        # ----------------------------
+        # ---------------------------------
 
         console.print()
 
