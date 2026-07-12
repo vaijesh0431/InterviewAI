@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "question": "Tell me about yourself."
+    },
+    {
+        "id": 2,
+        "question": "Why do you want to join our company?"
+    },
+    {
+        "id": 3,
+        "question": "What are your strengths and weaknesses?"
+    },
+    {
+        "id": 4,
+        "question": "Describe a challenging situation you faced and how you handled it."
+    },
+    {
+        "id": 5,
+        "question": "Where do you see yourself in the next five years?"
+    }
+]

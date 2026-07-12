@@ -1,21 +1,22 @@
-from config import APP_NAME, VERSION
-from utils.helpers import print_header, success, info
-from utils.logger import logger
+from interviewer.menu import select_topic
+from interviewer.interview_session import InterviewSession
+
+from utils.helpers import print_header
 
 
 def main():
+
     print_header()
 
-    info(f"Application : {APP_NAME}")
-    info(f"Version     : {VERSION}")
+    topic = select_topic()
 
-    logger.info("Application Started")
+    if topic is None:
+        print("Invalid Selection")
+        return
 
-    success("Environment Initialized Successfully")
+    interview = InterviewSession(topic)
 
-    print()
-    print("Welcome to InterviewAI")
-    print("Your AI Voice Interview Coach")
+    interview.start()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "question": "What is Python?"
+    },
+    {
+        "id": 2,
+        "question": "Explain list comprehension."
+    },
+    {
+        "id": 3,
+        "question": "What is a decorator?"
+    },
+    {
+        "id": 4,
+        "question": "Difference between list and tuple?"
+    },
+    {
+        "id": 5,
+        "question": "Explain generators."
+    }
+]

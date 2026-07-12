@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "question": "What is DBMS?"
+    },
+    {
+        "id": 2,
+        "question": "What is the difference between SQL and NoSQL databases?"
+    },
+    {
+        "id": 3,
+        "question": "Explain normalization."
+    },
+    {
+        "id": 4,
+        "question": "What is a primary key and a foreign key?"
+    },
+    {
+        "id": 5,
+        "question": "Explain ACID properties in DBMS."
+    }
+]

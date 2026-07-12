@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "question": "What is Object-Oriented Programming?"
+    },
+    {
+        "id": 2,
+        "question": "Explain the four pillars of OOP."
+    },
+    {
+        "id": 3,
+        "question": "What is polymorphism?"
+    },
+    {
+        "id": 4,
+        "question": "What is the difference between abstraction and encapsulation?"
+    },
+    {
+        "id": 5,
+        "question": "What is inheritance? Explain with an example."
+    }
+]

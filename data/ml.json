@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "question": "What is Machine Learning?"
+    },
+    {
+        "id": 2,
+        "question": "Difference between supervised and unsupervised learning?"
+    },
+    {
+        "id": 3,
+        "question": "What is overfitting?"
+    },
+    {
+        "id": 4,
+        "question": "Explain gradient descent."
+    },
+    {
+        "id": 5,
+        "question": "What is cross validation?"
+    }
+]
