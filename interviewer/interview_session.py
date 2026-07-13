@@ -18,6 +18,13 @@ from evaluation.scoring import overall_score
 
 from config import MAX_FOLLOWUPS
 
+from reports.report_generator import ReportGenerator
+from reports.exporter import export_json
+from reports.formatter import recommendation
+from reports.display import display_report
+
+from evaluation.interview_score import interview_score
+
 console = Console()
 
 
@@ -295,16 +302,55 @@ class InterviewSession:
                 current_answer = followup_answer
                 current_evaluation = followup_result
 
-        # ---------------------------------
-        # Interview Completed
-        # ---------------------------------
+            # ---------------------------------
+            # Generate Interview Report
+            # ---------------------------------
 
-        console.print()
+            report = ReportGenerator(
+                self.results
+            ).generate()
 
-        console.print(
-            Panel.fit(
-                "🎉 Interview Completed Successfully!",
-                title="InterviewAI",
-                border_style="green",
+            overall = interview_score(report)
+
+            decision = recommendation(overall)
+
+            # Add additional information to the report
+            report["candidate"] = "Guest"
+            report["topic"] = self.topic.title()
+            report["overall_score"] = overall
+            report["recommendation"] = decision
+
+            # Display report
+            display_report(
+                report,
+                overall,
+                decision
             )
-        )
+
+            # Export report
+            filepath = export_json(report)
+
+            # ---------------------------------
+            # Interview Completed
+            # ---------------------------------
+
+            console.print()
+
+            console.print(
+                Panel.fit(
+                    "🎉 Interview Completed Successfully!",
+                    title="InterviewAI",
+                    border_style="green",
+                )
+            )
+
+            console.print()
+
+            console.print(
+                Panel.fit(
+                    f"📁 Report exported successfully!\n\n{filepath}",
+                    title="Report Saved",
+                    border_style="cyan",
+                )
+            )
+        
