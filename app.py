@@ -2,6 +2,7 @@ from interviewer.menu import select_topic
 from interviewer.interview_session import InterviewSession
 
 from utils.helpers import print_header
+from utils.logger import logger
 
 
 def main():
@@ -20,4 +21,21 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+
+    try:
+
+        main()
+
+    except KeyboardInterrupt:
+
+        print("\n\n❌ Interview Cancelled by User.")
+
+        logger.info("Interview Cancelled by User")
+
+    except Exception as e:
+
+        logger.exception("Unhandled Exception")
+
+        print("\n⚠ An unexpected error occurred.")
+
+        print("Please check logs/interview.log for details.")

@@ -18,12 +18,18 @@ from evaluation.scoring import overall_score
 
 from config import MAX_FOLLOWUPS
 
+from ui.summary import show_summary
+
 from reports.report_generator import ReportGenerator
 from reports.exporter import export_json
 from reports.formatter import recommendation
 from reports.display import display_report
 
 from evaluation.interview_score import interview_score
+
+from datetime import datetime
+
+from rich.progress import track
 
 console = Console()
 
@@ -54,10 +60,18 @@ class InterviewSession:
                 border_style="magenta",
             )
         )
+        # Start Interview Timer
+        self.start_time = datetime.now()
 
         total_questions = len(self.questions)
 
-        for index, question in enumerate(self.questions, start=1):
+        for index, question in enumerate(
+            track(
+                self.questions,
+                description="🎯 Interview Progress",
+            ),
+            start=1,
+        ):
 
             # ---------------------------------
             # Display Question
@@ -309,6 +323,7 @@ class InterviewSession:
             report = ReportGenerator(
                 self.results
             ).generate()
+            report["duration"] = round(duration, 2)
 
             overall = interview_score(report)
 
@@ -325,6 +340,13 @@ class InterviewSession:
                 report,
                 overall,
                 decision
+            )
+            show_summary(
+                duration=report["duration"],
+                questions=len(self.questions),
+                followups=len([r for r in self.results if r.get("followup")]),
+                overall=overall,
+                recommendation=decision,
             )
 
             # Export report
@@ -343,6 +365,12 @@ class InterviewSession:
                     border_style="green",
                 )
             )
+            # Stop Interview Timer
+            self.end_time = datetime.now()
+
+            duration = (
+            self.end_time - self.start_time
+            ).total_seconds() / 60
 
             console.print()
 
